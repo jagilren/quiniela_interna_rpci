@@ -30,4 +30,13 @@
       <a class="btn btn-block" href="{{ url_for('polla.index') }}">Ver Polla_View</a>
     </div>
   </section>
+
+  <section class="card">
+    <h2 class="section-title">Respaldo</h2>
+    <p class="muted">Descarga una copia de toda la base de datos (usuarios, participantes,
+      marcadores). Guárdala por si acaso.</p>
+    <a class="btn btn-primary btn-block" href="{{ url_for('admin.backup') }}">
+      ⬇️ Descargar copia de la BD
+    </a>
+  </section>
 {% endblock %}

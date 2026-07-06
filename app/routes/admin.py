@@ -1,5 +1,8 @@
 import os
 import uuid
+import sqlite3
+import tempfile
+from datetime import datetime
 
 from flask import (
     Blueprint,
@@ -10,6 +13,7 @@ from flask import (
     flash,
     session,
     current_app,
+    send_file,
 )
 from werkzeug.utils import secure_filename
 from sqlalchemy.exc import IntegrityError
@@ -60,6 +64,41 @@ def dashboard():
         n_disponibles=Match.query.filter_by(disponible=True).count(),
         n_matches=Match.query.count(),
         lista=polla_lista(),
+    )
+
+
+# --------------------------------------------------------------------------- #
+# Respaldo: descargar la base de datos completa
+# --------------------------------------------------------------------------- #
+@admin_bp.route("/backup")
+@admin_required
+def backup():
+    """Descarga una copia consistente de la BD SQLite (sirve como respaldo).
+
+    Usa 'VACUUM INTO' para obtener una foto coherente aunque esté en modo WAL,
+    y no depende de flyctl ni de acceso externo: la app se respalda a sí misma.
+    """
+    db_path = db.engine.url.database
+    if not db_path or not os.path.exists(db_path):
+        flash("No se encontró el archivo de base de datos.", "error")
+        return redirect(url_for("admin.dashboard"))
+
+    tmp = tempfile.NamedTemporaryFile(suffix=".db", delete=False)
+    tmp.close()
+    os.remove(tmp.name)  # VACUUM INTO exige que el destino NO exista
+
+    con = sqlite3.connect(db_path)
+    try:
+        con.execute("VACUUM INTO ?", (tmp.name,))
+    finally:
+        con.close()
+
+    fecha = datetime.now().strftime("%Y%m%d-%H%M")
+    return send_file(
+        tmp.name,
+        as_attachment=True,
+        download_name=f"quiniela-backup-{fecha}.db",
+        mimetype="application/octet-stream",
     )
 
 
