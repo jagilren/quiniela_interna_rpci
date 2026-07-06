@@ -386,6 +386,28 @@ html, body {
   padding: 26px 20px;
   text-align: center;
 }
+/* Badge jocoso "ALGORITMO 100% LEGAL" con el raponero */
+.legal-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin: 0 auto 12px;
+  padding: 7px 12px;
+  background: #ffd400;
+  color: #141414;
+  border: 2px dashed #141414;
+  border-radius: 12px;
+  transform: rotate(-3deg);
+  box-shadow: 0 5px 14px rgba(0, 0, 0, 0.35);
+}
+.legal-ico svg { display: block; }
+.legal-txt {
+  font-size: 0.82rem;
+  font-weight: 900;
+  line-height: 1;
+  letter-spacing: 0.4px;
+  text-align: left;
+}
 .roulette-title {
   font-size: 1rem;
   font-weight: 800;
