@@ -1,6 +1,26 @@
+import sqlite3
+
 from flask_sqlalchemy import SQLAlchemy
+from sqlalchemy import event
+from sqlalchemy.engine import Engine
 
 db = SQLAlchemy()
+
+
+@event.listens_for(Engine, "connect")
+def _sqlite_pragmas(dbapi_connection, connection_record):
+    """SQLite en modo WAL + espera ante bloqueos: mejor concurrencia de lecturas/escrituras.
+
+    - WAL: lecturas y escrituras conviven sin bloquearse entre sí.
+    - busy_timeout: si otra escritura tiene el lock, espera hasta 5 s en vez de
+      fallar de inmediato con 'database is locked'.
+    """
+    if isinstance(dbapi_connection, sqlite3.Connection):
+        cur = dbapi_connection.cursor()
+        cur.execute("PRAGMA journal_mode=WAL;")
+        cur.execute("PRAGMA synchronous=NORMAL;")
+        cur.execute("PRAGMA busy_timeout=5000;")
+        cur.close()
 
 
 class Usuario(db.Model):

@@ -18,4 +18,6 @@ RUN mkdir -p /app/instance /app/app/static/uploads
 
 EXPOSE 8000
 
-CMD ["gunicorn", "-w", "2", "-b", "0.0.0.0:8000", "--access-logfile", "-", "wsgi:app"]
+# 2 workers x 8 hilos = 16 peticiones concurrentes (ideal para ráfagas), poca RAM.
+CMD ["gunicorn", "-w", "2", "--threads", "8", "-k", "gthread", "--timeout", "60", \
+     "-b", "0.0.0.0:8000", "--access-logfile", "-", "wsgi:app"]
