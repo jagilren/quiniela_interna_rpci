@@ -100,7 +100,8 @@ quiniela_rpci/
   el JS hace `fetch` a `/asignar` (endpoint devuelve JSON con el marcador elegido) y muestra
   un **overlay a PANTALLA COMPLETA** con marcadores girando ~5 s que aterriza con "pop" en el
   marcador real. El overlay grande es una **preferencia confirmada del usuario** — no
-  reducirla. Respeta `prefers-reduced-motion`.
+  reducirla. Respeta `prefers-reduced-motion`. Incluye un **badge jocoso "ALGORITMO 100%
+  LEGAL"** con un **raponero (SVG inline)** — humor intencional, mantenerlo.
 - Validación de los 3 dígitos con mensajes diferenciados (vacío / formato / no coincide;
   el "no coincide" en tono amable recordando que son los últimos 3 del ID).
 
