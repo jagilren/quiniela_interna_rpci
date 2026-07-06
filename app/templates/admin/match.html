@@ -1,0 +1,25 @@
+{% extends "admin/base_admin.html" %}
+{% set active = 'match' %}
+{% block title %}Admin · Match{% endblock %}
+
+{% block admin_content %}
+  <section class="card">
+    <h2 class="section-title">Tabla Match ({{ matches|length }})</h2>
+    {% if matches %}
+      <div class="scores-grid">
+        {% for m in matches %}
+          <span class="badge {{ 'badge-available' if m.disponible else 'badge-muted' }}">
+            {{ m.marcador }}
+          </span>
+        {% endfor %}
+      </div>
+      <p class="hint">Verde = disponible · gris = ya asignado.</p>
+      <a class="btn btn-danger btn-block" href="{{ url_for('admin.match_reset') }}">
+        Resetear tabla Match
+      </a>
+    {% else %}
+      <p class="muted">La tabla Match está vacía. Genérala desde Ajustes.</p>
+      <a class="btn btn-block" href="{{ url_for('admin.ajustes') }}">Ir a Ajustes</a>
+    {% endif %}
+  </section>
+{% endblock %}

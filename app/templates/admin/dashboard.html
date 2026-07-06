@@ -1,0 +1,33 @@
+{% extends "admin/base_admin.html" %}
+{% set active = 'dashboard' %}
+{% block title %}Admin · Inicio{% endblock %}
+
+{% block admin_content %}
+  <section class="card">
+    <h2 class="section-title">Estado de la quiniela</h2>
+    <div class="stats">
+      <div class="stat"><span class="stat-num">{{ n_usuarios }}</span><span class="stat-label">Usuarios</span></div>
+      <div class="stat"><span class="stat-num">{{ n_participantes }}</span><span class="stat-label">Participantes</span></div>
+      <div class="stat"><span class="stat-num">{{ n_disponibles }}</span><span class="stat-label">Disponibles</span></div>
+      <div class="stat"><span class="stat-num">{{ n_matches }}</span><span class="stat-label">Marcadores</span></div>
+    </div>
+
+    {% if lista %}
+      <div class="flash flash-success">✔ La Polla_View está activa para los usuarios.</div>
+    {% else %}
+      <div class="flash flash-info">
+        Para activar la Polla_View: selecciona participantes y genera la tabla Match.
+      </div>
+    {% endif %}
+  </section>
+
+  <section class="card">
+    <h2 class="section-title">Accesos rápidos</h2>
+    <div class="quick-links">
+      <a class="btn btn-block" href="{{ url_for('admin.usuarios') }}">Gestionar usuarios</a>
+      <a class="btn btn-block" href="{{ url_for('admin.participantes') }}">Elegir participantes</a>
+      <a class="btn btn-block" href="{{ url_for('admin.ajustes') }}">Ajustes y generar Match</a>
+      <a class="btn btn-block" href="{{ url_for('polla.index') }}">Ver Polla_View</a>
+    </div>
+  </section>
+{% endblock %}

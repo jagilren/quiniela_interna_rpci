@@ -1,0 +1,56 @@
+{% extends "admin/base_admin.html" %}
+{% set active = 'ajustes' %}
+{% block title %}Admin · Ajustes{% endblock %}
+
+{% block admin_content %}
+  <section class="card">
+    <h2 class="section-title">Ajustes de la quiniela</h2>
+    <form method="post" action="{{ url_for('admin.ajustes') }}" enctype="multipart/form-data">
+      <label class="field-label" for="titulo_quiniela">Título</label>
+      <input class="input" name="titulo_quiniela" id="titulo_quiniela"
+             value="{{ ajustes.titulo_quiniela }}">
+
+      <label class="field-label" for="equipo_local">Equipo local</label>
+      <input class="input" name="equipo_local" id="equipo_local"
+             value="{{ ajustes.equipo_local }}">
+
+      <label class="field-label" for="equipo_visitante">Equipo visitante</label>
+      <input class="input" name="equipo_visitante" id="equipo_visitante"
+             value="{{ ajustes.equipo_visitante }}">
+
+      <div class="grid-3">
+        <div>
+          <label class="field-label" for="max_local">Máx. local</label>
+          <input class="input" type="number" min="0" max="20" name="max_local"
+                 id="max_local" value="{{ ajustes.max_local }}">
+        </div>
+        <div>
+          <label class="field-label" for="max_visitante">Máx. visit.</label>
+          <input class="input" type="number" min="0" max="20" name="max_visitante"
+                 id="max_visitante" value="{{ ajustes.max_visitante }}">
+        </div>
+        <div>
+          <label class="field-label" for="max_global">Máx. global</label>
+          <input class="input" type="number" min="0" max="40" name="max_global"
+                 id="max_global" value="{{ ajustes.max_global }}">
+        </div>
+      </div>
+
+      <label class="field-label" for="logo">Logo del banner (opcional)</label>
+      <input class="input" type="file" name="logo" id="logo" accept="image/*">
+
+      <button class="btn btn-primary btn-block" type="submit">Guardar ajustes</button>
+    </form>
+  </section>
+
+  <section class="card">
+    <h2 class="section-title">Generar tabla Match</h2>
+    <p class="muted">
+      Crea todos los marcadores desde 0-0 según los máximos configurados
+      (sumando ≤ máx. global). La tabla Match debe estar vacía; si no, resetéala primero.
+    </p>
+    <form method="post" action="{{ url_for('admin.generar') }}">
+      <button class="btn btn-primary btn-block" type="submit">Generar marcadores</button>
+    </form>
+  </section>
+{% endblock %}

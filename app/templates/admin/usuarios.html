@@ -1,0 +1,54 @@
+{% extends "admin/base_admin.html" %}
+{% set active = 'usuarios' %}
+{% block title %}Admin · Usuarios{% endblock %}
+
+{% block admin_content %}
+  <section class="card">
+    <h2 class="section-title">Nuevo usuario</h2>
+    <form method="post" action="{{ url_for('admin.usuarios_crear') }}">
+      <label class="field-label" for="nombre_usuario">Nombre</label>
+      <input class="input" name="nombre_usuario" id="nombre_usuario" required>
+      <label class="field-label" for="id_usuario">ID de usuario</label>
+      <input class="input" name="id_usuario" id="id_usuario" required
+             placeholder="Ej: V-12345678">
+      <button class="btn btn-primary btn-block" type="submit">Agregar</button>
+    </form>
+  </section>
+
+  <section class="card">
+    <h2 class="section-title">Usuarios ({{ usuarios|length }})</h2>
+    <ul class="lista">
+      {% for u in usuarios %}
+        <li class="row row-editable">
+          <details>
+            <summary>
+              <span class="row-name">{{ u.nombre_usuario }}</span>
+              <span class="badge {{ 'badge-score' if u.participa else 'badge-muted' }}">
+                {{ 'participa' if u.participa else u.id_usuario }}
+              </span>
+            </summary>
+            <form method="post" action="{{ url_for('admin.usuarios_editar', uid=u.id) }}" class="edit-form">
+              <label class="field-label">Nombre</label>
+              <input class="input" name="nombre_usuario" value="{{ u.nombre_usuario }}" required>
+              <label class="field-label">ID</label>
+              <input class="input" name="id_usuario" value="{{ u.id_usuario }}" required>
+              <button class="btn btn-primary btn-block" type="submit">Guardar</button>
+            </form>
+            <form method="post" action="{{ url_for('admin.usuarios_eliminar', uid=u.id) }}"
+                  onsubmit="return confirm('¿Eliminar a {{ u.nombre_usuario }}?');">
+              <button class="btn btn-danger btn-block" type="submit">Eliminar</button>
+            </form>
+          </details>
+        </li>
+      {% else %}
+        <li class="row"><span class="muted">Aún no hay usuarios.</span></li>
+      {% endfor %}
+    </ul>
+
+    {% if usuarios %}
+      <a class="btn btn-danger btn-block" href="{{ url_for('admin.usuarios_borrar_todo') }}">
+        Borrar todos los usuarios
+      </a>
+    {% endif %}
+  </section>
+{% endblock %}

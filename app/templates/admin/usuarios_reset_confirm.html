@@ -1,0 +1,22 @@
+{% extends "admin/base_admin.html" %}
+{% set active = 'usuarios' %}
+{% block title %}Admin · Borrar usuarios{% endblock %}
+
+{% block admin_content %}
+  <section class="card">
+    <h2 class="section-title">⚠ Borrar todos los usuarios</h2>
+    <div class="flash flash-error">
+      Esta acción elimina <strong>los {{ n_usuarios }} usuarios</strong> y sus
+      participaciones. Los marcadores de la tabla Match se conservan y vuelven a
+      quedar disponibles. No se puede deshacer.
+    </div>
+    <form method="post" action="{{ url_for('admin.usuarios_borrar_todo') }}"
+          onsubmit="return confirm('Confirmación final: ¿borrar TODOS los usuarios?');">
+      <label class="field-label" for="confirmacion">Escribe <strong>BORRAR</strong> para confirmar</label>
+      <input class="input" name="confirmacion" id="confirmacion" autocomplete="off"
+             placeholder="BORRAR" required>
+      <button class="btn btn-danger btn-block" type="submit">Borrar definitivamente</button>
+      <a class="btn btn-block" href="{{ url_for('admin.usuarios') }}">Cancelar</a>
+    </form>
+  </section>
+{% endblock %}

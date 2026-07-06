@@ -1,0 +1,34 @@
+{% extends "admin/base_admin.html" %}
+{% set active = 'participantes' %}
+{% block title %}Admin · Participantes{% endblock %}
+
+{% block admin_content %}
+  <section class="card">
+    <h2 class="section-title">¿Quiénes participan?</h2>
+    <p class="muted">Marca los usuarios que juegan la quiniela actual.</p>
+
+    <form method="post" action="{{ url_for('admin.participantes') }}">
+      <ul class="lista">
+        {% for u in usuarios %}
+          <li class="row">
+            <label class="row-radio">
+              <input type="checkbox" name="usuario_ids" value="{{ u.id }}"
+                     {{ 'checked' if u.participa }}
+                     {{ 'disabled' if (u.participante and u.participante.asignado) }}>
+              <span class="row-name">{{ u.nombre_usuario }}</span>
+            </label>
+            {% if u.participante and u.participante.asignado %}
+              <span class="badge badge-score">{{ u.participante.match.marcador }}</span>
+            {% endif %}
+          </li>
+        {% else %}
+          <li class="row"><span class="muted">Primero crea usuarios.</span></li>
+        {% endfor %}
+      </ul>
+      {% if usuarios %}
+        <p class="hint">Los participantes con marcador ya asignado no se pueden quitar aquí.</p>
+        <button class="btn btn-primary btn-block" type="submit">Guardar selección</button>
+      {% endif %}
+    </form>
+  </section>
+{% endblock %}

@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+
+{% block header_action %}
+  <a class="banner-link" href="{{ url_for('polla.index') }}" title="Ver quiniela">👁</a>
+{% endblock %}
+
+{% block content %}
+  <nav class="admin-nav">
+    <a href="{{ url_for('admin.dashboard') }}" class="{{ 'active' if active == 'dashboard' }}">Inicio</a>
+    <a href="{{ url_for('admin.usuarios') }}" class="{{ 'active' if active == 'usuarios' }}">Usuarios</a>
+    <a href="{{ url_for('admin.participantes') }}" class="{{ 'active' if active == 'participantes' }}">Participantes</a>
+    <a href="{{ url_for('admin.ajustes') }}" class="{{ 'active' if active == 'ajustes' }}">Ajustes</a>
+    <a href="{{ url_for('admin.match') }}" class="{{ 'active' if active == 'match' }}">Match</a>
+    <a href="{{ url_for('admin.logout') }}" class="logout">Salir</a>
+  </nav>
+
+  {% block admin_content %}{% endblock %}
+{% endblock %}

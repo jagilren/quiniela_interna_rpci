@@ -1,0 +1,26 @@
+# Python
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+env/
+
+# Base de datos SQLite / datos locales (NO subir datos reales)
+instance/
+*.db
+*.sqlite3
+
+# Logos subidos por el admin (conservar solo el marcador de carpeta)
+app/static/uploads/*
+!app/static/uploads/.gitkeep
+
+# Variables de entorno / secretos
+.env
+.env.*
+
+# Sistema operativo / editor
+.DS_Store
+*.swp
+.idea/
+.vscode/

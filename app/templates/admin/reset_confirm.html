@@ -1,0 +1,21 @@
+{% extends "admin/base_admin.html" %}
+{% set active = 'match' %}
+{% block title %}Admin · Resetear Match{% endblock %}
+
+{% block admin_content %}
+  <section class="card">
+    <h2 class="section-title">⚠ Resetear tabla Match</h2>
+    <div class="flash flash-error">
+      Esta acción borra <strong>todos los marcadores</strong> y quita el marcador
+      asignado a cada participante. No se puede deshacer.
+    </div>
+    <form method="post" action="{{ url_for('admin.match_reset') }}"
+          onsubmit="return confirm('Confirmación final: ¿borrar toda la tabla Match?');">
+      <label class="field-label" for="confirmacion">Escribe <strong>BORRAR</strong> para confirmar</label>
+      <input class="input" name="confirmacion" id="confirmacion" autocomplete="off"
+             placeholder="BORRAR" required>
+      <button class="btn btn-danger btn-block" type="submit">Borrar definitivamente</button>
+      <a class="btn btn-block" href="{{ url_for('admin.match') }}">Cancelar</a>
+    </form>
+  </section>
+{% endblock %}

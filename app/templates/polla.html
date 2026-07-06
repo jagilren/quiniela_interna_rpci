@@ -1,0 +1,429 @@
+{% extends "base.html" %}
+
+{% block header_action %}
+  <a class="banner-link" href="{{ url_for('admin.dashboard') }}" title="Admin">⚙</a>
+{% endblock %}
+
+{% macro score(gl, gv) -%}
+<span class="score"><span class="gl">{{ gl }}</span><span class="dash">–</span><span class="gv">{{ gv }}</span></span>
+{%- endmacro %}
+
+{% macro prow(p) -%}
+<div class="row row-pendiente">
+  <label class="row-radio">
+    <input type="radio" name="participante_id" value="{{ p.id }}" required>
+    <span class="row-name">{{ p.usuario.nombre_usuario }}</span>
+  </label>
+  <span class="badge badge-pending">pendiente</span>
+</div>
+{%- endmacro %}
+
+{% block content %}
+  <section class="card match-header">
+    <div class="teams">
+      <span class="team team-local">{{ ajustes.equipo_local }}</span>
+      <span class="vs">vs</span>
+      <span class="team team-visitante">{{ ajustes.equipo_visitante }}</span>
+    </div>
+  </section>
+
+  {% if not lista %}
+    <div class="flash flash-info">
+      La quiniela aún no está lista. El administrador debe seleccionar participantes
+      y generar los marcadores.
+    </div>
+  {% endif %}
+
+  <!-- 1) PENDIENTES primero -->
+  <section class="card">
+    <h2 class="section-title">
+      Participantes pendientes{% if pendientes %} ({{ pendientes|length }}){% endif %}
+    </h2>
+
+    <form method="post" action="{{ url_for('polla.asignar') }}" id="asignar-form">
+      <div class="lista">
+        {% for p in pendientes[:6] %}
+          {{ prow(p) }}
+        {% endfor %}
+
+        {% if pendientes|length > 6 %}
+          <details class="more-details">
+            <summary class="more-toggle">
+              <span class="lbl-show">＋ Ver los otros {{ pendientes|length - 6 }} participantes</span>
+              <span class="lbl-hide">－ Ocultar</span>
+            </summary>
+            {% for p in pendientes[6:] %}
+              {{ prow(p) }}
+            {% endfor %}
+          </details>
+        {% endif %}
+
+        {% if not pendientes and not asignados %}
+          <div class="row"><span class="muted">No hay participantes habilitados.</span></div>
+        {% elif not pendientes %}
+          <div class="row"><span class="muted">¡Todos los participantes ya tienen resultado!</span></div>
+        {% endif %}
+      </div>
+
+      {% if pendientes and not disponibles %}
+        <div class="flash flash-info">No quedan marcadores disponibles.</div>
+      {% endif %}
+
+      {% if pendientes and disponibles %}
+        <!-- Barra de acción fija: siempre visible aunque la lista sea muy larga -->
+        <div class="action-bar">
+          <div class="action-bar-inner">
+            <div class="action-fields">
+              <label class="pin-group" for="digitos">
+                <span class="pin-label">Últ. 3 díg.<br>de tu ID</span>
+                <input class="input input-pin" type="tel" inputmode="numeric"
+                       pattern="[0-9]{3}" maxlength="3" name="digitos" id="digitos"
+                       placeholder="000" required aria-label="Últimos 3 dígitos de tu ID">
+              </label>
+              <button class="btn action-btn" type="submit">
+                🎲 Asignar resultado
+              </button>
+            </div>
+            <div class="action-hint" id="action-hint">Selecciona un participante pendiente</div>
+          </div>
+        </div>
+      {% endif %}
+    </form>
+  </section>
+
+  <!-- 2) ASIGNADOS después -->
+  {% if asignados %}
+    <section class="card">
+      <h2 class="section-title">Resultados asignados</h2>
+      <div class="table-wrap">
+        <table class="result-table">
+          <thead>
+            <tr>
+              <th class="col-num">#</th>
+              <th>Participante</th>
+              <th class="col-score">
+                <span class="team-local">{{ ajustes.equipo_local }}</span>
+                <span class="th-dash">·</span>
+                <span class="team-visitante">{{ ajustes.equipo_visitante }}</span>
+              </th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for p in asignados %}
+              <tr>
+                <td class="col-num">{{ loop.index }}</td>
+                <td class="col-name">{{ p.usuario.nombre_usuario }}</td>
+                <td class="col-score">{{ score(p.match.goles_local, p.match.goles_visitante) }}</td>
+              </tr>
+            {% endfor %}
+          </tbody>
+          <tfoot>
+            <tr>
+              <td class="total-label" colspan="2">Total asignados</td>
+              <td class="col-score total-num">{{ asignados|length }}</td>
+            </tr>
+          </tfoot>
+        </table>
+      </div>
+      <button class="btn share-btn" type="button" id="share-png">
+        📷 Compartir como imagen (WhatsApp)
+      </button>
+    </section>
+  {% endif %}
+
+  <!-- Marcadores disponibles -->
+  <section class="card">
+    <h2 class="section-title">Marcadores disponibles ({{ disponibles|length }})</h2>
+    {% if disponibles %}
+      <div class="scores-grid">
+        {% for m in disponibles %}
+          {{ score(m.goles_local, m.goles_visitante) }}
+        {% endfor %}
+      </div>
+    {% else %}
+      <p class="muted">No hay marcadores disponibles.</p>
+    {% endif %}
+  </section>
+
+  <!-- Ruleta de asignación (overlay a pantalla completa) -->
+  <div class="roulette-overlay" id="roulette" aria-hidden="true">
+    <div class="roulette-box">
+      <div class="roulette-title" id="roulette-title">Girando la suerte…</div>
+      <div class="roulette-teams">
+        <span class="team-local">{{ ajustes.equipo_local }}</span>
+        <span class="team-visitante">{{ ajustes.equipo_visitante }}</span>
+      </div>
+      <div class="roulette-score" id="roulette-score">{{ score(0, 0) }}</div>
+      <div class="roulette-caption" id="roulette-caption">Asignando tu marcador…</div>
+    </div>
+  </div>
+
+  <script>
+    window.MARCADORES = [{% for m in disponibles %}[{{ m.goles_local }},{{ m.goles_visitante }}]{% if not loop.last %},{% endif %}{% endfor %}];
+    window.QUINIELA = {
+      titulo: {{ ajustes.titulo_quiniela|tojson }},
+      local: {{ ajustes.equipo_local|tojson }},
+      visitante: {{ ajustes.equipo_visitante|tojson }},
+      asignados: [{% for p in asignados %}{n: {{ p.usuario.nombre_usuario|tojson }}, gl: {{ p.match.goles_local }}, gv: {{ p.match.goles_visitante }}}{% if not loop.last %},{% endif %}{% endfor %}]
+    };
+  </script>
+
+  <script>
+    (function () {
+      // ----- Hint de participante seleccionado -----
+      var hint = document.getElementById('action-hint');
+      function updateHint() {
+        var sel = document.querySelector('input[name="participante_id"]:checked');
+        if (!hint) return;
+        if (sel) {
+          var name = sel.closest('.row').querySelector('.row-name').textContent.trim();
+          hint.textContent = 'Asignar a: ' + name;
+          hint.classList.add('ok');
+        } else {
+          hint.textContent = 'Selecciona un participante pendiente';
+          hint.classList.remove('ok');
+        }
+      }
+      document.querySelectorAll('input[name="participante_id"]').forEach(function (r) {
+        r.addEventListener('change', updateHint);
+      });
+      updateHint();
+
+      // ----- Mensajes claros del campo de 3 dígitos -----
+      var pin = document.getElementById('digitos');
+      if (pin) {
+        pin.addEventListener('invalid', function () {
+          if (pin.validity.valueMissing) {
+            pin.setCustomValidity('Escribe los 3 últimos dígitos de tu ID para asignar el resultado.');
+          } else if (pin.validity.patternMismatch) {
+            pin.setCustomValidity('Deben ser exactamente 3 dígitos numéricos (ej. 123).');
+          } else {
+            pin.setCustomValidity('');
+          }
+        });
+        pin.addEventListener('input', function () { pin.setCustomValidity(''); });
+      }
+
+      // ----- Ruleta al asignar -----
+      var form = document.getElementById('asignar-form');
+      var overlay = document.getElementById('roulette');
+      var scoreEl = document.getElementById('roulette-score');
+      var titleEl = document.getElementById('roulette-title');
+      var captionEl = document.getElementById('roulette-caption');
+      if (form && overlay) {
+        var reduced = window.matchMedia &&
+                      window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+        var SPIN_MS = reduced ? 900 : 5000;
+        var spinTimer = null;
+
+        function renderScore(gl, gv, extra) {
+          scoreEl.innerHTML =
+            '<span class="score' + (extra || '') + '">' +
+              '<span class="gl">' + gl + '</span>' +
+              '<span class="dash">–</span>' +
+              '<span class="gv">' + gv + '</span>' +
+            '</span>';
+        }
+        function randScore() {
+          var m = window.MARCADORES;
+          if (!m || !m.length) return [0, 0];
+          return m[Math.floor(Math.random() * m.length)];
+        }
+        function startSpin() {
+          overlay.classList.add('show');
+          overlay.setAttribute('aria-hidden', 'false');
+          titleEl.textContent = 'Girando la suerte…';
+          captionEl.textContent = 'Asignando tu marcador…';
+          scoreEl.classList.add('spinning');
+          var s = randScore(); renderScore(s[0], s[1]);
+          spinTimer = setInterval(function () {
+            var r = randScore(); renderScore(r[0], r[1]);
+          }, reduced ? 140 : 70);
+        }
+        function land(gl, gv, nombre) {
+          clearInterval(spinTimer);
+          scoreEl.classList.remove('spinning');
+          renderScore(gl, gv, ' landed');
+          titleEl.textContent = '¡Marcador asignado!';
+          captionEl.textContent = nombre;
+          setTimeout(function () { window.location.reload(); }, 2000);
+        }
+        function abort(msg) {
+          clearInterval(spinTimer);
+          overlay.classList.remove('show');
+          overlay.setAttribute('aria-hidden', 'true');
+          scoreEl.classList.remove('spinning');
+          alert(msg);
+        }
+
+        form.addEventListener('submit', function (e) {
+          if (!form.checkValidity()) return;
+          e.preventDefault();
+          startSpin();
+          var minDelay = new Promise(function (r) { setTimeout(r, SPIN_MS); });
+          var req = fetch(form.action, {
+            method: 'POST',
+            headers: { 'X-Requested-With': 'XMLHttpRequest' },
+            body: new FormData(form)
+          }).then(function (r) { return r.json(); });
+
+          req.then(function (res) {
+            if (!res || !res.ok) { abort((res && res.error) || 'No se pudo asignar.'); return; }
+            minDelay.then(function () { land(res.goles_local, res.goles_visitante, res.nombre); });
+          }).catch(function () { abort('Hubo un problema de conexión. Intenta de nuevo.'); });
+        });
+      }
+
+      // ----- Compartir tabla de asignados como PNG (Canvas + Web Share) -----
+      var shareBtn = document.getElementById('share-png');
+      if (shareBtn) shareBtn.addEventListener('click', function () {
+        var p = tablaAImagen();
+        if (!p) { alert('Aún no hay resultados asignados para compartir.'); return; }
+        p.then(function (b) {
+          if (!b) { alert('No se pudo generar la imagen. Intenta de nuevo.'); return; }
+          var file = new File([b], 'quiniela-resultados.png', { type: 'image/png' });
+          var puedeCompartir = navigator.canShare && navigator.canShare({ files: [file] });
+          var esTactil = (window.matchMedia && window.matchMedia('(pointer: coarse)').matches) ||
+                         navigator.maxTouchPoints > 0;
+          // Solo usamos el menú compartir en móvil táctil (en escritorio suele fallar).
+          if (puedeCompartir && esTactil) {
+            navigator.share({ files: [file], title: 'Quiniela RPCI', text: 'Resultados asignados' })
+              .catch(function (err) {
+                if (!err || err.name !== 'AbortError') descargar(b); // si falla, descarga
+              });
+          } else {
+            descargar(b);
+            alert('📷 Imagen descargada. Adjúntala en WhatsApp desde tus Descargas.');
+          }
+        });
+      });
+
+      function descargar(b) {
+        var a = document.createElement('a');
+        a.href = URL.createObjectURL(b);
+        a.download = 'quiniela-resultados.png';
+        document.body.appendChild(a); a.click(); a.remove();
+        setTimeout(function () { URL.revokeObjectURL(a.href); }, 4000);
+      }
+
+      function roundRect(ctx, x, y, w, h, r) {
+        ctx.beginPath();
+        ctx.moveTo(x + r, y);
+        ctx.arcTo(x + w, y, x + w, y + h, r);
+        ctx.arcTo(x + w, y + h, x, y + h, r);
+        ctx.arcTo(x, y + h, x, y, r);
+        ctx.arcTo(x, y, x + w, y, r);
+        ctx.closePath();
+      }
+
+      // Dibuja la tabla en un canvas y devuelve Promise<Blob> (siempre tema claro).
+      function tablaAImagen() {
+        var Q = window.QUINIELA;
+        if (!Q || !Q.asignados.length) return null;
+
+        var FONT = '-apple-system, "Segoe UI", Roboto, Helvetica, Arial, sans-serif';
+        var LOCAL = '#1d4ed8', VIS = '#ea580c', INK = '#1c2430', MUTED = '#6b7787';
+        var LINE = '#c9d2de', HEAD = '#eef2f8', ZEBRA = '#f6f8fc', ACCENT = '#10203a';
+
+        var W = 560, padX = 22;
+        var titleH = 104, headerH = 46, rowH = 46, totalH = 52, padBottom = 22;
+        var n = Q.asignados.length;
+        var H = titleH + headerH + n * rowH + totalH + padBottom;
+
+        var dpr = Math.max(window.devicePixelRatio || 1, 2);
+        var canvas = document.createElement('canvas');
+        canvas.width = W * dpr; canvas.height = H * dpr;
+        var ctx = canvas.getContext('2d');
+        ctx.scale(dpr, dpr);
+
+        // Fondo tarjeta
+        ctx.fillStyle = '#ffffff';
+        roundRect(ctx, 0, 0, W, H, 20); ctx.fill();
+
+        // Título
+        ctx.textAlign = 'center'; ctx.textBaseline = 'alphabetic';
+        ctx.fillStyle = ACCENT; ctx.font = '800 26px ' + FONT;
+        ctx.fillText(Q.titulo, W / 2, 44);
+        // Equipos coloreados, centrados
+        ctx.font = '800 20px ' + FONT;
+        var wl = ctx.measureText(Q.local).width, wv = ctx.measureText(Q.visitante).width;
+        ctx.font = '600 16px ' + FONT; var dvs = '  vs  '; var wvs = ctx.measureText(dvs).width;
+        var sx = (W - (wl + wvs + wv)) / 2, ty = 78;
+        ctx.textAlign = 'left';
+        ctx.font = '800 20px ' + FONT; ctx.fillStyle = LOCAL; ctx.fillText(Q.local, sx, ty);
+        ctx.font = '600 16px ' + FONT; ctx.fillStyle = MUTED; ctx.fillText(dvs, sx + wl, ty);
+        ctx.font = '800 20px ' + FONT; ctx.fillStyle = VIS; ctx.fillText(Q.visitante, sx + wl + wvs, ty);
+
+        // Geometría de columnas
+        var tX = padX, tW = W - 2 * padX;
+        var numW = 46, scoreW = 130, nameW = tW - numW - scoreW;
+        var numX = tX, nameX = tX + numW, scoreX = tX + numW + nameW;
+        var y0 = titleH;
+
+        // Encabezado
+        ctx.fillStyle = HEAD; ctx.fillRect(tX, y0, tW, headerH);
+        ctx.fillStyle = MUTED; ctx.font = '700 12px ' + FONT; ctx.textBaseline = 'middle';
+        ctx.textAlign = 'center'; ctx.fillText('#', numX + numW / 2, y0 + headerH / 2);
+        ctx.textAlign = 'left'; ctx.fillText('PARTICIPANTE', nameX + 10, y0 + headerH / 2);
+        ctx.textAlign = 'right'; ctx.fillText('RESULTADO', scoreX + scoreW - 12, y0 + headerH / 2);
+
+        // Filas
+        var y = y0 + headerH;
+        Q.asignados.forEach(function (p, i) {
+          if (i % 2 === 1) { ctx.fillStyle = ZEBRA; ctx.fillRect(tX, y, tW, rowH); }
+          // número
+          ctx.fillStyle = MUTED; ctx.font = '700 15px ' + FONT; ctx.textAlign = 'center';
+          ctx.fillText(String(i + 1), numX + numW / 2, y + rowH / 2);
+          // nombre (recortado si no cabe)
+          ctx.fillStyle = INK; ctx.font = '600 16px ' + FONT; ctx.textAlign = 'left';
+          ctx.fillText(fit(ctx, p.n, nameW - 20), nameX + 10, y + rowH / 2);
+          // marcador coloreado, alineado a la derecha
+          drawScore(ctx, p.gl, p.gv, scoreX + scoreW - 14, y + rowH / 2, FONT, LOCAL, VIS, MUTED);
+          y += rowH;
+        });
+
+        // Fila total
+        ctx.fillStyle = HEAD; ctx.fillRect(tX, y, tW, totalH);
+        ctx.fillStyle = MUTED; ctx.font = '800 12px ' + FONT; ctx.textAlign = 'left';
+        ctx.fillText('TOTAL ASIGNADOS', nameX + 10, y + totalH / 2);
+        ctx.fillStyle = INK; ctx.font = '800 20px ' + FONT; ctx.textAlign = 'right';
+        ctx.fillText(String(n), scoreX + scoreW - 14, y + totalH / 2);
+
+        // Cuadrícula
+        ctx.strokeStyle = LINE; ctx.lineWidth = 1;
+        var gridTop = y0, gridBottom = y + totalH;
+        [numX, nameX, scoreX, tX + tW].forEach(function (x) {
+          line(ctx, x, gridTop, x, gridBottom);
+        });
+        var hy = y0;
+        line(ctx, tX, hy, tX + tW, hy); hy += headerH;
+        for (var k = 0; k <= n; k++) { line(ctx, tX, hy, tX + tW, hy); hy += rowH; }
+        line(ctx, tX, gridBottom, tX + tW, gridBottom);
+        // Borde exterior redondeado
+        ctx.strokeStyle = LINE; roundRect(ctx, tX, gridTop, tW, gridBottom - gridTop, 10); ctx.stroke();
+
+        return new Promise(function (resolve) { canvas.toBlob(resolve, 'image/png'); });
+      }
+
+      function line(ctx, x1, y1, x2, y2) {
+        ctx.beginPath(); ctx.moveTo(x1 + 0.5, y1 + 0.5); ctx.lineTo(x2 + 0.5, y2 + 0.5); ctx.stroke();
+      }
+      function fit(ctx, text, maxW) {
+        if (ctx.measureText(text).width <= maxW) return text;
+        var t = text;
+        while (t.length > 1 && ctx.measureText(t + '…').width > maxW) t = t.slice(0, -1);
+        return t + '…';
+      }
+      function drawScore(ctx, gl, gv, right, cy, FONT, LOCAL, VIS, MUTED) {
+        ctx.font = '800 18px ' + FONT; ctx.textBaseline = 'middle';
+        var sgl = String(gl), sgv = String(gv), dash = ' – ';
+        var wgl = ctx.measureText(sgl).width, wd = ctx.measureText(dash).width, wgv = ctx.measureText(sgv).width;
+        var x = right - (wgl + wd + wgv);
+        ctx.textAlign = 'left';
+        ctx.fillStyle = LOCAL; ctx.fillText(sgl, x, cy);
+        ctx.fillStyle = MUTED; ctx.fillText(dash, x + wgl, cy);
+        ctx.fillStyle = VIS; ctx.fillText(sgv, x + wgl + wd, cy);
+      }
+    })();
+  </script>
+{% endblock %}

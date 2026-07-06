@@ -1,0 +1,33 @@
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<title>{% block title %}{{ ajustes.titulo_quiniela if ajustes else "Quiniela RPCI" }}{% endblock %}</title>
+<link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+
+<header class="banner">
+  <div class="banner-inner">
+    {% set logo = ajustes.logo_filename if ajustes else None %}
+    {% if logo %}
+      <img class="banner-logo" src="{{ url_for('static', filename='uploads/' ~ logo) }}" alt="logo">
+    {% else %}
+      <img class="banner-logo" src="{{ url_for('static', filename='img/logo.svg') }}" alt="logo">
+    {% endif %}
+    <span class="banner-title">{{ ajustes.titulo_quiniela if ajustes else "Quiniela RPCI" }}</span>
+    {% block header_action %}{% endblock %}
+  </div>
+</header>
+
+<main class="container">
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+      {% for category, msg in messages %}
+        {% if category == "popup" %}
+          <script>window.addEventListener('DOMContentLoaded', function(){ alert({{ msg|tojson }}); });</script>
+        {% else %}
+          <div class="flash flash-{{ category }}">{{ msg }}</div>
+        {% endif %}
+      {% endfor %}
+    {% endif %}
+  {% endwith %}
+
+  {% block content %}{% endblock %}
+</main>
