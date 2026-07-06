@@ -9,7 +9,7 @@ primary_region = 'ams'
 # Disco persistente para la base de datos SQLite (que vive en /app/instance).
 # Sin esto, los datos se borran en cada reinicio/deploy.
 [mounts]
-  source = 'quiniela_data'
+  source = 'vol_40o6wd29xymyxek4'
   destination = '/app/instance'
 
 [build]
