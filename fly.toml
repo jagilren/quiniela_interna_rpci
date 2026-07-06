@@ -6,6 +6,12 @@
 app = 'quiniela-interna-rpci'
 primary_region = 'ams'
 
+# Disco persistente para la base de datos SQLite (que vive en /app/instance).
+# Sin esto, los datos se borran en cada reinicio/deploy.
+[mounts]
+  source = 'quiniela_data'
+  destination = '/app/instance'
+
 [build]
 
 [http_service]

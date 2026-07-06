@@ -10,11 +10,11 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 COPY . .
 
-# Directorios persistentes (SQLite y logos subidos) + usuario no-root.
-RUN mkdir -p /app/instance /app/app/static/uploads \
-    && adduser --disabled-password --gecos "" appuser \
-    && chown -R appuser:appuser /app
-USER appuser
+# Directorios persistentes (SQLite y logos subidos).
+# Se corre como root (por defecto) para poder escribir el Volume de Fly, que se
+# monta como root; en la microVM aislada de Fly esto es estándar y seguro. El
+# named volume de Docker local también funciona sin problema de permisos.
+RUN mkdir -p /app/instance /app/app/static/uploads
 
 EXPOSE 8000
 
