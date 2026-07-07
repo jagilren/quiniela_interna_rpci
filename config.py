@@ -16,6 +16,8 @@ class Config:
     ADMIN_PASSWORD = os.environ.get("ADMIN_PASSWORD", "admin123")
 
     # Subida de logo del banner.
-    UPLOAD_FOLDER = os.path.join(basedir, "app", "static", "uploads")
+    # Va DENTRO del volumen persistente (instance/) para que sobreviva reinicios
+    # y redeploys en Fly, igual que la base de datos.
+    UPLOAD_FOLDER = os.path.join(instance_dir, "uploads")
     MAX_CONTENT_LENGTH = 4 * 1024 * 1024  # 4 MB
     ALLOWED_IMAGE_EXTENSIONS = {"png", "jpg", "jpeg", "gif", "webp", "svg"}

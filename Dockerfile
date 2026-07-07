@@ -14,7 +14,7 @@ COPY . .
 # Se corre como root (por defecto) para poder escribir el Volume de Fly, que se
 # monta como root; en la microVM aislada de Fly esto es estándar y seguro. El
 # named volume de Docker local también funciona sin problema de permisos.
-RUN mkdir -p /app/instance /app/app/static/uploads
+RUN mkdir -p /app/instance/uploads
 
 EXPOSE 8000
 

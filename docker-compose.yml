@@ -8,12 +8,9 @@ services:
       SECRET_KEY: "cambia-esta-clave-secreta"
       ADMIN_PASSWORD: "admin123"
     volumes:
-      # Volúmenes nombrados: Docker los inicializa con la propiedad del usuario
-      # 'appuser' de la imagen, evitando problemas de permisos con bind-mounts.
+      # Un solo volumen persistente: la BD y los logos subidos viven en /app/instance.
       - quiniela_db:/app/instance
-      - quiniela_uploads:/app/app/static/uploads
     restart: unless-stopped
 
 volumes:
   quiniela_db:
-  quiniela_uploads:

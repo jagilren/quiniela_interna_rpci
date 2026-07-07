@@ -6,12 +6,20 @@ from flask import (
     url_for,
     flash,
     jsonify,
+    send_from_directory,
+    current_app,
 )
 
 from ..models import db, Match, Participante, Ajustes
 from ..services import asignar_marcador, polla_lista
 
 polla_bp = Blueprint("polla", __name__)
+
+
+@polla_bp.route("/media/<path:filename>")
+def media(filename):
+    """Sirve archivos subidos (ej. el logo) desde el volumen persistente."""
+    return send_from_directory(current_app.config["UPLOAD_FOLDER"], filename)
 
 
 @polla_bp.route("/")
