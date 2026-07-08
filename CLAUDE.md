@@ -64,7 +64,13 @@ quiniela_rpci/
   quién juega con su marcador. Unicidad de `match_id` ⇒ ningún marcador se repite; nullable ⇒
   "pendiente".
 - **Ajustes** (singleton): `equipo_local`, `equipo_visitante`, `max_local`, `max_visitante`,
-  `max_global`, `titulo_quiniela`, `logo_filename`.
+  `max_global`, `titulo_quiniela`, `logo_filename`, `redirect_url` (nullable; si tiene valor la
+  Polla_View redirige a todos allí — ver "Redirigir a todos").
+
+> **Micro-migración de esquema:** `db.create_all()` NO altera tablas ya existentes. Como la BD de
+> producción vive en el volumen con datos, `app/__init__.py` tiene `_ensure_schema()` que hace un
+> `ALTER TABLE ... ADD COLUMN` idempotente (así se añadió `redirect_url`). Al agregar una columna
+> nueva al modelo, añade su ALTER ahí también, o la tabla existente no la tendrá.
 
 ## Reglas de negocio
 
@@ -83,8 +89,19 @@ quiniela_rpci/
 - CRUD Usuarios (con rechazo de nombre/ID duplicado y mensajes claros).
 - Selección de Participantes (checkboxes; no permite quitar a quien ya tiene marcador).
 - Ajustes: equipos, máximos de goles, título, **subida de logo** + botón **Generar Match**.
-- Match: ver marcadores; **Resetear** con doble validación (escribir `BORRAR`).
+- Match: ver marcadores como chips (disponibles vs. asignados). **Resetear** con doble validación
+  (escribir `BORRAR`). Además:
+  - **Agregar marcador manual** (form goles local/visitante): se valida que la fila no exista
+    (respaldo del `UniqueConstraint`) para no violar la unicidad. `services.agregar_marcador`.
+  - **Eliminar un marcador** con la ✕ del chip — **solo si aún NO está asignado** (los asignados
+    salen bloqueados con 🔒, sin ✕; y la ruta rechaza el borrado aunque fuercen el POST).
+    Al eliminarlo desaparece de "disponibles" en la Polla_View. `services.eliminar_marcador`.
 - **Borrar todos los usuarios** con doble validación (conserva Match y libera marcadores).
+- **🚨 Redirigir a todos** (interruptor de cierre): el admin fija una `redirect_url` y **todos
+  los visitantes con la quiniela abierta** son enviados allí. Implementación: la Polla_View pública
+  hace `redirect` server-side si hay URL, y además **sondea `/estado`** (JSON) cada 15 s por JS para
+  redirigir las pestañas ya abiertas. Se desactiva desde el mismo card. **No afecta al panel admin.**
+  Rutas: `admin.redirigir` (activar/desactivar) y `polla.estado` (sondeo ligero).
 
 **Polla_View** (`/`, pública):
 - Encabezado con equipos: **local y visitante en colores distintos** (local azul

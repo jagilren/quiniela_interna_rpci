@@ -1,5 +1,7 @@
 import random
 
+from sqlalchemy.exc import IntegrityError
+
 from .models import db, Usuario, Match, Participante, Ajustes
 
 
@@ -57,6 +59,62 @@ def borrar_usuarios():
     Participante.query.delete()
     Usuario.query.delete()
     db.session.commit()
+
+
+def agregar_marcador(ajustes, gl, gv):
+    """Agrega un marcador manual (disponible). Devuelve (match|None, error|None).
+
+    Verifica que no exista ya la misma fila completa (equipos + goles), pues la
+    tabla Match tiene UniqueConstraint sobre esos campos: crear un duplicado
+    violaría esa restricción.
+    """
+    existe = Match.query.filter_by(
+        local=ajustes.equipo_local,
+        visitante=ajustes.equipo_visitante,
+        goles_local=gl,
+        goles_visitante=gv,
+    ).first()
+    if existe is not None:
+        return None, f"El marcador {gl} - {gv} ya existe; no se puede duplicar."
+
+    match = Match(
+        local=ajustes.equipo_local,
+        visitante=ajustes.equipo_visitante,
+        goles_local=gl,
+        goles_visitante=gv,
+        disponible=True,
+    )
+    db.session.add(match)
+    try:
+        db.session.commit()
+    except IntegrityError:
+        db.session.rollback()
+        return None, f"El marcador {gl} - {gv} ya existe; no se puede duplicar."
+    return match, None
+
+
+def eliminar_marcador(match_id):
+    """Elimina un marcador SOLO si aún no está asignado a ningún participante.
+
+    Un marcador está asignado si `disponible=False` o si algún Participante lo
+    referencia. En ese caso no se elimina (regla del negocio). Devuelve
+    (ok:bool, error:str|None).
+    """
+    match = Match.query.get(match_id)
+    if match is None:
+        return False, "Ese marcador ya no existe."
+
+    asignado = (not match.disponible) or (
+        Participante.query.filter_by(match_id=match.id).first() is not None
+    )
+    if asignado:
+        return False, (
+            "No se puede eliminar: ese marcador ya está asignado a un participante."
+        )
+
+    db.session.delete(match)
+    db.session.commit()
+    return True, None
 
 
 def asignar_marcador(participante):

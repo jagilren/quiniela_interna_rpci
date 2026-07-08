@@ -1,8 +1,22 @@
 import os
 
 from flask import Flask
+from sqlalchemy import text
 
 from .models import db, Ajustes
+
+
+def _ensure_schema():
+    """Micro-migración para SQLite: agrega columnas nuevas a tablas ya existentes.
+
+    `db.create_all()` crea tablas que faltan pero NO altera las existentes. Como
+    la BD de producción ya tiene datos en el volumen, añadimos aquí, de forma
+    idempotente, las columnas nuevas que el modelo declara y la tabla no tiene.
+    """
+    columnas = {row[1] for row in db.session.execute(text("PRAGMA table_info(ajustes)"))}
+    if "redirect_url" not in columnas:
+        db.session.execute(text("ALTER TABLE ajustes ADD COLUMN redirect_url VARCHAR(300)"))
+        db.session.commit()
 
 
 def create_app():
@@ -23,6 +37,7 @@ def create_app():
 
     with app.app_context():
         db.create_all()
+        _ensure_schema()  # agrega columnas nuevas a tablas ya existentes
         Ajustes.get()  # crea el singleton de ajustes si no existe
 
     return app

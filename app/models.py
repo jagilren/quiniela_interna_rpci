@@ -109,6 +109,9 @@ class Ajustes(db.Model):
     max_global = db.Column(db.Integer, nullable=False, default=8)
     titulo_quiniela = db.Column(db.String(120), nullable=False, default="Quiniela RPCI")
     logo_filename = db.Column(db.String(200), nullable=True)
+    # Si tiene una URL, la Polla_View pública redirige a todos los visitantes ahí
+    # (interruptor de "cerrar/redirigir" controlado por el admin). None = inactivo.
+    redirect_url = db.Column(db.String(300), nullable=True)
 
     @staticmethod
     def get():

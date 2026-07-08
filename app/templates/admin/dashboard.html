@@ -32,6 +32,34 @@
   </section>
 
   <section class="card">
+    <h2 class="section-title">🚨 Redirigir a todos</h2>
+    {% if ajustes.redirect_url %}
+      <div class="flash flash-error">
+        Redirección <strong>ACTIVA</strong> →<br>
+        <strong>{{ ajustes.redirect_url }}</strong><br>
+        Todos los que tengan la quiniela abierta están siendo enviados allí.
+      </div>
+      <form method="post" action="{{ url_for('admin.redirigir') }}">
+        <input type="hidden" name="accion" value="desactivar">
+        <button class="btn btn-primary btn-block" type="submit">
+          Desactivar y volver a mostrar la quiniela
+        </button>
+      </form>
+    {% else %}
+      <p class="muted">Envía a todos los visitantes (con la quiniela abierta) a otra
+        dirección: sirve para cerrar la quiniela o mandar a un anuncio. Se aplica en
+        segundos y no afecta a este panel de admin.</p>
+      <form method="post" action="{{ url_for('admin.redirigir') }}">
+        <input type="hidden" name="accion" value="activar">
+        <label class="field-label" for="redirect_url">URL de destino</label>
+        <input class="input" name="redirect_url" id="redirect_url"
+               placeholder="https://ejemplo.com" required>
+        <button class="btn btn-danger btn-block" type="submit">Activar redirección</button>
+      </form>
+    {% endif %}
+  </section>
+
+  <section class="card">
     <h2 class="section-title">Respaldo</h2>
     <p class="muted">Descarga una copia de toda la base de datos (usuarios, participantes,
       marcadores). Guárdala por si acaso.</p>

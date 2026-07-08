@@ -19,7 +19,14 @@ from werkzeug.utils import secure_filename
 from sqlalchemy.exc import IntegrityError
 
 from ..models import db, Usuario, Match, Participante, Ajustes
-from ..services import generar_matches, reset_matches, borrar_usuarios, polla_lista
+from ..services import (
+    generar_matches,
+    reset_matches,
+    borrar_usuarios,
+    polla_lista,
+    agregar_marcador,
+    eliminar_marcador,
+)
 from ..auth import admin_required
 
 admin_bp = Blueprint("admin", __name__, url_prefix="/admin")
@@ -64,7 +71,39 @@ def dashboard():
         n_disponibles=Match.query.filter_by(disponible=True).count(),
         n_matches=Match.query.count(),
         lista=polla_lista(),
+        ajustes=Ajustes.get(),
     )
+
+
+# --------------------------------------------------------------------------- #
+# Redirigir a todos los visitantes (interruptor de cierre)
+# --------------------------------------------------------------------------- #
+@admin_bp.route("/redirigir", methods=["POST"])
+@admin_required
+def redirigir():
+    ajustes = Ajustes.get()
+    accion = request.form.get("accion")
+
+    if accion == "activar":
+        url = (request.form.get("redirect_url") or "").strip()
+        if not url:
+            flash("Escribe la URL de destino.", "error")
+            return redirect(url_for("admin.dashboard"))
+        if not (url.startswith("http://") or url.startswith("https://")):
+            url = "https://" + url
+        ajustes.redirect_url = url
+        db.session.commit()
+        flash(
+            f"Redirección ACTIVADA hacia {url}. Los visitantes con la quiniela "
+            "abierta serán enviados allí en segundos.",
+            "success",
+        )
+    else:
+        ajustes.redirect_url = None
+        db.session.commit()
+        flash("Redirección desactivada. La quiniela vuelve a mostrarse.", "info")
+
+    return redirect(url_for("admin.dashboard"))
 
 
 # --------------------------------------------------------------------------- #
@@ -313,7 +352,36 @@ def generar():
 @admin_required
 def match():
     matches = Match.query.order_by(Match.goles_local, Match.goles_visitante).all()
-    return render_template("admin/match.html", matches=matches)
+    return render_template("admin/match.html", matches=matches, ajustes=Ajustes.get())
+
+
+@admin_bp.route("/match/agregar", methods=["POST"])
+@admin_required
+def match_agregar():
+    ajustes = Ajustes.get()
+    gl = request.form.get("goles_local", type=int)
+    gv = request.form.get("goles_visitante", type=int)
+    if gl is None or gv is None or gl < 0 or gv < 0:
+        flash("Escribe goles válidos (números de 0 en adelante).", "error")
+        return redirect(url_for("admin.match"))
+
+    _, error = agregar_marcador(ajustes, gl, gv)
+    if error:
+        flash(error, "error")
+    else:
+        flash(f"Marcador {gl} - {gv} agregado.", "success")
+    return redirect(url_for("admin.match"))
+
+
+@admin_bp.route("/match/<int:mid>/eliminar", methods=["POST"])
+@admin_required
+def match_eliminar(mid):
+    ok, error = eliminar_marcador(mid)
+    if ok:
+        flash("Marcador eliminado.", "success")
+    else:
+        flash(error, "error")
+    return redirect(url_for("admin.match"))
 
 
 @admin_bp.route("/match/reset", methods=["GET", "POST"])

@@ -237,6 +237,73 @@ html, body {
   font-variant-numeric: tabular-nums;
 }
 
+/* ---------- Admin: agregar / eliminar marcadores ---------- */
+.sub-title {
+  margin: 16px 0 8px;
+  font-size: 0.72rem;
+  font-weight: 800;
+  color: var(--muted);
+  text-transform: uppercase;
+  letter-spacing: 0.6px;
+}
+.add-score-fields {
+  display: flex;
+  align-items: flex-end;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.mini-field { display: flex; flex-direction: column; gap: 4px; flex: 0 0 auto; }
+.mini-lbl {
+  font-size: 0.62rem;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.3px;
+  max-width: 78px;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+.input-goal {
+  width: 64px;
+  text-align: center;
+  font-weight: 800;
+  font-size: 1.1rem;
+  padding: 10px 6px;
+}
+.add-dash { align-self: center; padding-bottom: 10px; color: var(--muted); font-weight: 700; }
+.add-btn { flex: 1 1 auto; margin-top: 0; min-width: 120px; }
+
+.mchip-grid { display: flex; flex-wrap: wrap; gap: 8px; }
+.mchip {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  background: var(--score-bg);
+  border-radius: 999px;
+  padding: 3px 5px;
+}
+.mchip .score { background: transparent; padding: 5px 4px 5px 10px; }
+.chip-x {
+  border: none;
+  cursor: pointer;
+  width: 26px;
+  height: 26px;
+  border-radius: 999px;
+  background: #f7d7d3;
+  color: #b3271b;
+  font-weight: 900;
+  font-size: 0.78rem;
+  line-height: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+.chip-x:hover { background: #f2bdb6; }
+.chip-x:active { transform: translateY(1px); }
+.chip-x:focus-visible { outline: 2px solid var(--danger); outline-offset: 1px; }
+.mchip-lock { opacity: 0.62; padding-right: 10px; }
+.chip-lock { font-size: 0.85rem; }
+
 /* ---------- Formularios ---------- */
 .field-label {
   display: block;
@@ -553,4 +620,6 @@ html, body {
   .badge-available { background: #123324; }
   .badge-muted { background: #232b36; }
   .badge-pending { background: #3a2e12; color: #e7b64f; }
+  .chip-x { background: #4a201b; color: #ff9d92; }
+  .chip-x:hover { background: #5c2820; }
 }

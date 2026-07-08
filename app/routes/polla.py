@@ -22,9 +22,19 @@ def media(filename):
     return send_from_directory(current_app.config["UPLOAD_FOLDER"], filename)
 
 
+@polla_bp.route("/estado")
+def estado():
+    """Estado ligero para el sondeo del navegador (redirección remota)."""
+    ajustes = Ajustes.get()
+    return jsonify(redirect=ajustes.redirect_url or None)
+
+
 @polla_bp.route("/")
 def index():
     ajustes = Ajustes.get()
+    # Interruptor del admin: si hay URL de redirección, se envía a todos allí.
+    if ajustes.redirect_url:
+        return redirect(ajustes.redirect_url)
     participantes = (
         Participante.query.join(Participante.usuario)
         .order_by(Participante.match_id.isnot(None).desc())

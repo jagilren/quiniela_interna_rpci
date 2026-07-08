@@ -2,23 +2,75 @@
 {% set active = 'match' %}
 {% block title %}Admin · Match{% endblock %}
 
+{% macro score(gl, gv) -%}
+<span class="score"><span class="gl">{{ gl }}</span><span class="dash">–</span><span class="gv">{{ gv }}</span></span>
+{%- endmacro %}
+
 {% block admin_content %}
+  <section class="card">
+    <h2 class="section-title">Agregar un marcador</h2>
+    <p class="hint">Se agrega como disponible. No puede repetir uno que ya exista.</p>
+    <form method="post" action="{{ url_for('admin.match_agregar') }}">
+      <div class="add-score-fields">
+        <label class="mini-field">
+          <span class="mini-lbl team-local">{{ ajustes.equipo_local }}</span>
+          <input class="input input-goal" type="number" min="0" max="20"
+                 name="goles_local" value="0" inputmode="numeric" required>
+        </label>
+        <span class="add-dash">–</span>
+        <label class="mini-field">
+          <span class="mini-lbl team-visitante">{{ ajustes.equipo_visitante }}</span>
+          <input class="input input-goal" type="number" min="0" max="20"
+                 name="goles_visitante" value="0" inputmode="numeric" required>
+        </label>
+        <button class="btn btn-primary add-btn" type="submit">＋ Agregar</button>
+      </div>
+    </form>
+  </section>
+
   <section class="card">
     <h2 class="section-title">Tabla Match ({{ matches|length }})</h2>
     {% if matches %}
-      <div class="scores-grid">
-        {% for m in matches %}
-          <span class="badge {{ 'badge-available' if m.disponible else 'badge-muted' }}">
-            {{ m.marcador }}
-          </span>
-        {% endfor %}
-      </div>
-      <p class="hint">Verde = disponible · gris = ya asignado.</p>
+      {% set disp = matches | selectattr('disponible') | list %}
+      {% set asig = matches | rejectattr('disponible') | list %}
+
+      <h3 class="sub-title">Disponibles ({{ disp|length }})</h3>
+      {% if disp %}
+        <div class="mchip-grid">
+          {% for m in disp %}
+            <form class="mchip" method="post"
+                  action="{{ url_for('admin.match_eliminar', mid=m.id) }}">
+              {{ score(m.goles_local, m.goles_visitante) }}
+              <button class="chip-x" type="submit"
+                      aria-label="Eliminar marcador {{ m.marcador }}"
+                      title="Eliminar este marcador">✕</button>
+            </form>
+          {% endfor %}
+        </div>
+        <p class="hint">Toca ✕ para quitar un marcador improbable. Solo se pueden
+          eliminar los que aún nadie tiene asignado.</p>
+      {% else %}
+        <p class="muted">No quedan marcadores disponibles.</p>
+      {% endif %}
+
+      {% if asig %}
+        <h3 class="sub-title">Ya asignados ({{ asig|length }}) · no se pueden eliminar</h3>
+        <div class="mchip-grid">
+          {% for m in asig %}
+            <span class="mchip mchip-lock">
+              {{ score(m.goles_local, m.goles_visitante) }}
+              <span class="chip-lock" title="Asignado" aria-hidden="true">🔒</span>
+            </span>
+          {% endfor %}
+        </div>
+      {% endif %}
+
       <a class="btn btn-danger btn-block" href="{{ url_for('admin.match_reset') }}">
         Resetear tabla Match
       </a>
     {% else %}
-      <p class="muted">La tabla Match está vacía. Genérala desde Ajustes.</p>
+      <p class="muted">La tabla Match está vacía. Agrega marcadores arriba o
+        genérala desde Ajustes.</p>
       <a class="btn btn-block" href="{{ url_for('admin.ajustes') }}">Ir a Ajustes</a>
     {% endif %}
   </section>
